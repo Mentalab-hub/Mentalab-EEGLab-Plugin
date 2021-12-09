@@ -1,6 +1,6 @@
-#Mentalab-EEGLab-Plugin
+# Mentalab-EEGLab-Plugin
 
-Mentalab-EEGLab-Plugin is MATLAB library that acts as a plugin for [EEGLab] (https://sccn.ucsd.edu/eeglab/index.php). Use it to import Mentalab Explore CSV and BIN files into an EEGLab structure.
+Mentalab-EEGLab-Plugin is MATLAB library that acts as a plugin for [EEGLab](https://sccn.ucsd.edu/eeglab/index.php). Use it to import Mentalab Explore CSV and BIN files into an EEGLab structure.
 
 ## Installation
 
@@ -15,7 +15,7 @@ Clone or download the repository directly from GitHub. Unzip the package and mov
 Restart EEGLAB and select "Import Mentalab Explore data" under File -> Import Data -> Using EEGLAB functions and plugins.
 
 ## Contributing
-Pull requests and feedback are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests and feedback is welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 [GNU General Public License v3.0](https://github.com/Nujanauss/Mentalab-EEGLab-Plugin/blob/master/LICENSE)
