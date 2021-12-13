@@ -58,11 +58,4 @@ function [EEG, com] = loadcsv(filepath, eeg_srate)
     ORN = pop_importevent(ORN, 'event', orn_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     ORN = eeg_checkset(ORN);
-    
-    % Save data to disk
-    EEG = pop_saveset(EEG, 'filename', strcat(filename, '_ExG.set'), 'filepath', directory);
-    EEG = eeg_checkset(EEG);
-    
-    ORN = pop_saveset(ORN, 'filename', strcat(filename, '_ORN.set'), 'filepath', directory);
-    ORN = eeg_checkset(ORN);
 end    

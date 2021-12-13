@@ -1,4 +1,4 @@
-function [EEG, com] = loadbin(filepath)
+function [EEG, com] = loadbin(filepath, varargin)
     com = '';
 
     fid = fopen(filepath);
