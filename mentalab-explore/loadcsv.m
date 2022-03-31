@@ -9,19 +9,22 @@ function [EEG, com] = loadcsv(filepath, eeg_srate)
     filename_split = split(filename, "_");
     name = char(filename_split(1));
 
-    EXG = importdata([directory '\' name '_ExG.csv'], ',', 1);
+    fullfile_EXG = fullfile(directory, append(name, '_ExG.csv'));
+    EXG = importdata(fullfile_EXG, ',', 1);
     eeg_data = sortrows(EXG.data, 1);
     eeg_data = eeg_data(:, 2:end)';
     eeg_ch_names = EXG.textdata(2:end);
     eeg_timestamps = EXG.data(:, 1);
     
-    ORN = importdata([directory '\' name '_ORN.csv'], ',', 1);
+    fullfile_ORN = fullfile(directory, append(name, '_ORN.csv'));
+    ORN = importdata(fullfile_ORN, ',', 1);
     orn_data = sortrows(ORN.data, 1);
     orn_data = orn_data(:, 2:end)';
     orn_ch_names = ORN.textdata(2:end);
     orn_timestamps = ORN.data(:, 1);
     
-    marker = importdata([directory '\' name '_Marker.csv'], ',',1);
+    fullfile_marker = fullfile(directory, append(name, '_Marker.csv'));
+    marker = importdata(fullfile_marker, ',',1);
     eeg_marker = [];
     orn_marker = [];
     if isfield(marker,'data')
