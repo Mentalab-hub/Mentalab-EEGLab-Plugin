@@ -1,4 +1,4 @@
-function [output] = parsePacket(fid)
+function [output] = parseBtPacket(fid)
 % Parse the incoming data package
 %   This function reads and parses one data package from the input stream.
 %   
@@ -34,35 +34,31 @@ function [output] = parsePacket(fid)
 
 output = [];
 
-interruptWarning = 'Stream interrupted unexpectedly!';
+EXG_UNIT = 1e-6;
+TIMESTAMP_SCALE = 10000;
+interruptWarning = 'Stream interrupted unexpectedly! End of file/stream!';
 fletcherMismatchWarning = 'Fletcher mismatch!';
 pidUnexpectedWarning = 'Unexpected package ID: ';
 
-[pid, n] = fread(fid, 1, '*ubit8');    % Read the package ID
+[pid,n] = fread(fid,1,'uint8');    % Read the package ID
 if n==0
     warning(interruptWarning);
     output.type = 'end';
     return; % No data in the stream/file
 end
-output.cnt = fread(fid, 1, '*ubit8');              % Counter of the package
-payload = fread(fid, 1, 'uint16');                 % Number of bytes in the package
-output.timestamp = fread(fid, 1, 'uint32') / 100;  % Timestamp of the package in second
+output.cnt = fread(fid,1,'uint8');        % Counter of the package
+payload = fread(fid,1,'uint16');    % Number of bytes in the package
+output.timestamp = fread(fid,1,'uint32')/TIMESTAMP_SCALE;  % Timestamp of the package in second
 
 switch pid
     case 13         % Orientation package
         output.type = 'orn';
-        output.orn = fread(fid, (payload - 8) / 2, 'int16');
+        output.orn = fread(fid,(payload-8)/2,'int16');
         output.orn = output.orn .* [0.061, 0.061, 0.061, 8.750, 8.750, 8.750, 1.52, 1.52, 1.52]';
     
-    case 19         % Environment package
-        output.type = 'env';
-        output.temperature = fread(fid, 1, '*bit8');
-        output.light = (1000 / 4095) * fread(fid, 1, 'uint16'); % In Lux
-        output.battery = (16.8 / 6.8) * (1.8 / 2457) * fread(fid, 1, 'uint16'); % In volts
-    
-    case {144, 208, 146, 210, 30, 62} % EEG package
-        [temp, n] = fread(fid, (payload - 8) / 3, '*bit24');
-        if n < ((payload - 8) / 3) % check if the package terminates in between
+    case {144, 146, 30, 62, 208, 210} % EEG package
+        [temp, n] = fread(fid,(payload-8),'uint8');
+        if n < (payload-8) %check if the package terminates in between
             warning(interruptWarning);
             output.type = 'end';
             return;
@@ -72,52 +68,60 @@ switch pid
             nChan = 5;      % 4 channels + 1 status
             vref = 2.4;
             nPacket = 33;
-            temp = reshape(temp, [nChan, nPacket]);
-            output.data = double(temp(2:end, :)) * vref / (2 ^ 23 - 1) / 6; % Calculate the real voltage value
-            %output.status = temp(1,:);    %save the status of data points
+            temp = byte2int24(temp);
+            temp = reshape(temp,[nChan,nPacket]);
+            output.data = double(temp(2:end,:)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         elseif (pid == 146) || (pid == 210)
             output.type = 'eeg8';
             nChan = 9;      % 8 channels + 1 status
             vref = 2.4;
-            nPacket = [];
+            nPacket = 16;
+            temp = byte2int24(temp);
+            temp = reshape(temp,[nChan,nPacket]);
+            output.data = double(temp(2:end,:)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         elseif pid == 30
             output.type = 'eeg8';
             nChan = 9;      % 8 channels + 1 status
             vref = 4.5;
-            nPacket = [];
+            nPacket = 16;
+            temp = byte2int24(temp);
+            temp = reshape(temp,[nChan,nPacket]);
+            output.data = double(temp(2:end,:)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         elseif pid == 62
             output.type = 'eeg8';
             nChan = 8;      % 8 channels
             vref = 4.5;
             nPacket = 18;
-            temp = reshape(temp, [nChan, nPacket]);
-            output.data = double(temp) * vref / (2 ^ 23 - 1) / 6; % Calculate the real voltage value
+            temp = byte2int24(temp);
+            temp = reshape(temp,[nChan,nPacket]);
+            output.data = double(temp) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         end
-
-    case 27     % TimeStamp
-        output.type = 'ts';
-        output.ts = fread(fid, (payload - 8) / 4, 'uint32');
-    case 99     % Device info
-        output.type = 'fw';
-        output.fw = fread(fid, 1, 'uint32');
-    case 111    % Disconnect packet
-        output.type = 'dis';
+        output.data = round(output.data/EXG_UNIT, 2);
+    case {27, 19, 111, 99}
+        fread(fid, payload-8, 'uint8');
+        % do nothing
+    case 194
+        output.type = 'marker_event';
+        output.code = fread(fid,1,'uint16');
+    case {192, 193, 195}    % Not implemented
+        fread(fid, payload-8, 'uint8');
+        output.type = 'unimplemented';
     otherwise
         warning([pidUnexpectedWarning pid])
-        temp = fread(fid, payload-8, '*bit8'); % Read the payload
+        temp = fread(fid,payload-8,'uint8'); % Read the payload
         output.type = 'end';
 end
 
 
 % Check the consistency of the Fletcher
-[fletcher, n] = fread(fid, 4, '*ubit8');
-if n < 4
+[fletcher, n] = fread(fid,4,'uint8');
+if n<4
     warning(interruptWarning);
-elseif (((pid ~= 27) && (fletcher(4) ~= 222)) ...
-        || ((pid == 27) && (fletcher(4) ~= 255)))
+elseif((pid~=27)&&(fletcher(4) ~= 222)) || ((pid==27)&&(fletcher(4)~=255))
     disp(fletcher);
     warning(fletcherMismatchWarning)
     output.type = 'end';
 end
 
 end
+

@@ -1,4 +1,4 @@
-function [EEG, com] = loadcsv(filepath, eeg_srate)
+function [EEG, com] = loadcsv(filepath)
     com = '';
     EEG = [];
     EEG = eeg_emptyset;
@@ -42,11 +42,13 @@ function [EEG, com] = loadcsv(filepath, eeg_srate)
             orn_marker(i, 1)= find(orn_timestamps > marker.data(i,1), 1);
         end
     end
+
+    sample_rate = getSamplingRate(eeg_timestamps);
     
     % Convert to EEGLAB structure
     eeg_chanlocs = struct('labels', eeg_ch_names);
     EEG = pop_importdata('dataformat', 'array', 'nbchan', 0, 'data', ...
-        eeg_data, 'setname', 'raw_eeg', 'srate', eeg_srate, 'chanlocs', ...
+        eeg_data, 'setname', 'raw_eeg', 'srate', sample_rate, 'chanlocs', ...
         eeg_chanlocs, 'pnts', 0, 'xmin', 0);
     EEG = eeg_checkset(EEG);
     EEG = pop_importevent( EEG, 'event', eeg_marker, 'fields', ...

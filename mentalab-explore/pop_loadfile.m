@@ -16,8 +16,7 @@ function [EEG, com] = runMain(filepath)
     if (contains(ext, 'csv'))
         checkFolderContents(filename, directory);
     end
-    sampling_rate = getSamplingRate();
-    [EEG, com] = loadBINCSV(filepath, sampling_rate, ext);
+    [EEG, com] = loadBINCSV(filepath, ext);
 end
 
 
@@ -38,13 +37,12 @@ function [filename, path] = getFileFromUser()
 end
 
 
-function [EEG, com] = loadBINCSV(filepath, sampling_rate, ext)
+function [EEG, com] = loadBINCSV(filepath, ext)
     if (contains(ext, "bin", 'IgnoreCase', true))
-        error(['---> Binary data not currently supported - we' char(39) 're working on it!'])
-        %loadbin(filepath);
+        [EEG, com] = loadbin(filepath);
+    else
+        [EEG, com] = loadcsv(filepath);
     end
-
-    [EEG, com] = loadcsv(filepath, sampling_rate);
 end
 
 
@@ -73,23 +71,5 @@ function checkFolderContents(filename, directory) % Will be CSV file
     end
     if (~exg_orn_marker(3))
          error(['---> Selected directory does not contain: ' name '_Marker.csv.'])
-    end
-end
-
-
-function sampling_rate = getSamplingRate()
-    sampling_rate = inputgui( 'geometry', { [1 1] }, ... % Get the sampling rate from the user
-        'geomvert', [3], 'uilist', { ...
-        { 'style', 'text', 'string', [ 'Sampling rate:' 10 10 10 ] }, ...
-        { 'style', 'popupmenu', 'string', '250 Hz|500 Hz|1k Hz' } } );
-
-   if (isequal(sampling_rate, {[1]})) % First option... etc.
-       sampling_rate = 250;
-   elseif (isequal(sampling_rate, {[2]})) 
-       sampling_rate = 500;
-   elseif (isequal(sampling_rate, {[3]})) 
-       sampling_rate = 1000;
-   elseif (isempty(sampling_rate))
-        error('---> Please select a sampling rate to proceed.')
     end
 end

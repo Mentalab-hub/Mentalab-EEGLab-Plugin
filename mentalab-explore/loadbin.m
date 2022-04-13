@@ -3,42 +3,53 @@ function [EEG, com] = loadbin(filepath, varargin)
 
     fid = fopen(filepath);
     read = 1;
-    ORN.data = [];
-    ORN.timestamp = [];
-    EEG.data = [];
-    EEG.timestamp = [];
-    ENV.temperature = [];
-    ENV.light = [];
-    ENV.battery = [];
-    ENV.timestamp = [];
-    TS = [];
-    fw = 1;
+    orn_data = [];
+    orn_timestamp = [];
+    exg_data = [];
+    exg_timestamp = [];
     marker = [];
 
-    while read % Read file
-        packet = parsePacket(fid);
+    orn_srate = 20; % Sampling rate of ORN data
+
+    while read
+        packet = parseBtPacket(fid);
         switch packet.type
             case 'orn'
-                ORN.data = cat(2, ORN.data, packet.orn);
-                ORN.timestamp = cat(2, ORN.timestamp, packet.timestamp);
-            case {'eeg4', 'eeg8'}
-                EEG.data = cat(2, EEG.data, packet.data);
-                EEG.timestamp = cat(2,EEG.timestamp, repmat(packet.timestamp,...
-                    1, size(packet.data, 2)));
-            case 'env'
-                ENV.temperature = cat(2, ENV.temperature, packet.temperature);
-                ENV.light = cat(2, ENV.light, packet.light);
-                ENV.battery = cat(2, ENV.battery, packet.battery);
-                ENV.timestamp = cat(2, ENV.timestamp, packet.timestamp);
-            case 'ts'
-                TS = cat(2, TS, packet.ts);
-            case 'fw'
-                fw = packet.fw;
+                orn_data = cat(2, orn_data, packet.orn);
+                orn_timestamp = cat(2, orn_timestamp, packet.timestamp);
+            case { 'eeg4', 'eeg8' }
+                exg_data = cat(2, exg_data, packet.data);
+                exg_timestamp = cat(2, exg_timestamp, ...
+                    repmat(packet.timestamp, 1, size(packet.data, 2)));
             case 'marker'
                 marker = cat(2, marker, packet.timestamp);
+            case { 'env', 'ts', 'fw', 'dev_info' }
+                continue; % do nothing
             otherwise
-                read = 0;   
+                read = 0; % end of stream
         end
     end
-    writeCSV(EEG, ORN, filepath); % Saves two csv files in the same directory as original binary file
+
+    % Event syncing
+    for i = 1:size(marker, 1)
+        marker(i, 1) = find(exg_timestamp > marker(i, 1), 1);    
+    end
+
+    sample_rate = getSamplingRate(exg_timestamp);
+
+    % Convert to EEGLAB structure
+    EEG = pop_importdata('dataformat', 'array', ...
+        'nbchan', size(exg_data, 1), 'data', ...
+        exg_data, 'setname', 'raw_eeg', 'srate', sample_rate, 'xmin', 0);
+    EEG = eeg_checkset(EEG);
+    EEG = pop_importevent( EEG, 'event', marker, 'fields', ...
+        {'latency', 'type'}, 'timeunit', NaN);
+    EEG = eeg_checkset(EEG);
+    
+    ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
+        orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0);
+    ORN = eeg_checkset(ORN);
+    ORN = pop_importevent(ORN, 'event', marker, 'fields', ...
+        {'latency', 'type'}, 'timeunit', NaN);
+    ORN = eeg_checkset(ORN);
 end
