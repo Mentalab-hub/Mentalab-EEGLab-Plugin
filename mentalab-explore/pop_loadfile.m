@@ -17,6 +17,13 @@ function [EEG, com] = runMain(filepath)
         checkFolderContents(filename, directory);
     end
     [EEG, com] = loadBINCSV(filepath, ext);
+
+    channelNameList = requestChannelLabels(EEG);
+    if length(channelNameList) > 3
+        for n = 1:length(channelNameList)
+            EEG.chanlocs(n).labels = channelNameList{n};
+        end
+    end
 end
 
 
@@ -72,4 +79,20 @@ function checkFolderContents(filename, directory) % Will be CSV file
     if (~exg_orn_marker(3))
          error(['---> Selected directory does not contain: ' name '_Marker.csv.'])
     end
+end
+
+
+function channelNameList = requestChannelLabels(EEG)
+    if (EEG.nbchan < 5)
+        prompt = {'Reference:','Channel 1:','Channel 2:','Channel 3:'};
+        definput = {'Ref', 'Ch1', 'Ch2', 'Ch3'};
+    else 
+        prompt = {'Reference:','Channel 1:','Channel 2:','Channel 3:',...
+            'Channel 4:','Channel 5:','Channel 6:','Channel 7:'};
+        definput = {'Ref', 'Ch1', 'Ch2', 'Ch3', 'Ch4', 'Ch5', 'Ch6', 'Ch7'};
+    end
+
+    dlgtitle = 'Channel Labels';
+    dims = [1 12];
+    channelNameList = inputdlg(prompt, dlgtitle, dims, definput, 'on');
 end
