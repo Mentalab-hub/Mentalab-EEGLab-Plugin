@@ -13,6 +13,9 @@ function [EEG, com] = loadbin(filepath, varargin)
 
     while read
         packet = parseBtPacket(fid);
+        if ~isfield(packet, 'type')
+            continue;
+        end
         switch packet.type
             case 'orn'
                 orn_data = cat(2, orn_data, packet.orn);
