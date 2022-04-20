@@ -100,6 +100,7 @@ switch pid
         output.data = round(output.data/EXG_UNIT, 2);
     case {27, 19, 111, 99}
         fread(fid, payload-8, 'uint8'); % do nothing
+        output.type = 'unimplemented';
     case 194
         output.type = 'marker_event';
         output.code = fread(fid,1,'uint16');
@@ -117,7 +118,8 @@ end
 [fletcher, n] = fread(fid, 4, 'uint8');
 if n < 4
     warning(interruptWarning);
-elseif((pid ~= 27) && (fletcher(4) ~= 222)) || ((pid == 27) && (fletcher(4) ~= 255))
+elseif ((pid ~= 27) && (fletcher(4) ~= 222))...
+       || ((pid == 27) && (fletcher(4) ~= 255))
     disp(fletcher);
     warning(fletcherMismatchWarning)
     output.type = 'end';

@@ -24,18 +24,18 @@ function [EEG, com] = loadbin(filepath, varargin)
                 exg_data = cat(2, exg_data, packet.data);
                 exg_timestamp = cat(2, exg_timestamp, ...
                     repmat(packet.timestamp, 1, size(packet.data, 2)));
-            case 'marker'
-                marker = cat(2, marker, packet.timestamp);
-            case { 'env', 'ts', 'fw', 'dev_info' }
+            case 'marker_event'
+                marker = cat(1, marker, [packet.timestamp, floor(packet.code)]);
+            case { 'env', 'ts', 'fw', 'dev_info', 'unimplemented' }
                 continue; % do nothing
             otherwise
                 read = 0; % end of stream
         end
     end
 
-    % Event syncing
+    % Event syncing - find the first timestamp that is close to the marker
     for i = 1:size(marker, 1)
-        marker(i, 1) = find(exg_timestamp > marker(i, 1), 1);    
+        marker(i, 1) = find(exg_timestamp > marker(i, 1), 1);
     end
 
     sample_rate = getSamplingRate(exg_timestamp);

@@ -61,11 +61,14 @@ function checkFolderContents(filename, directory) % Will be CSV file
     files = dir(directory);
     for i = 1:length(files)
         file_i = files(i).name;
-        if (contains(file_i, [name '_ExG.csv']))
+        if (contains(file_i, [name '_ExG.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_ExG'], 'IgnoreCase', true))
             exg_orn_marker(1) = true;
-        elseif (contains(file_i, [name '_ORN.csv']))
+        elseif (contains(file_i, [name '_ORN.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_ORN'], 'IgnoreCase', true))
             exg_orn_marker(2) = true;
-        elseif (contains(file_i, [name '_Marker.csv']))
+        elseif (contains(file_i, [name '_Marker.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_Marker'], 'IgnoreCase', true))
             exg_orn_marker(3) = true;
         end
     end
@@ -84,12 +87,12 @@ end
 
 function channelNameList = requestChannelLabels(EEG)
     if (EEG.nbchan < 5)
-        prompt = {'Reference:','Channel 1:','Channel 2:','Channel 3:'};
-        definput = {'Ref', 'Ch1', 'Ch2', 'Ch3'};
+        prompt = {'Channel 1:','Channel 2:','Channel 3:','Channel 4:'};
+        definput = {'Ch1','Ch2','Ch3','Ch4'};
     else 
-        prompt = {'Reference:','Channel 1:','Channel 2:','Channel 3:',...
-            'Channel 4:','Channel 5:','Channel 6:','Channel 7:'};
-        definput = {'Ref', 'Ch1', 'Ch2', 'Ch3', 'Ch4', 'Ch5', 'Ch6', 'Ch7'};
+        prompt = {'Channel 1:','Channel 2:','Channel 3:','Channel 4:'...
+            'Channel 5:','Channel 6:','Channel 7:','Channel 8:'};
+        definput = {'Ch1','Ch2','Ch3','Ch4','Ch5','Ch6','Ch7','Ch8'};
     end
 
     dlgtitle = 'Channel Labels';
