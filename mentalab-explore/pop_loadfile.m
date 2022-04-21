@@ -86,13 +86,11 @@ end
 
 
 function channelNameList = requestChannelLabels(EEG)
-    if (EEG.nbchan < 5)
-        prompt = {'Channel 1:','Channel 2:','Channel 3:','Channel 4:'};
-        definput = {'Ch1','Ch2','Ch3','Ch4'};
-    else 
-        prompt = {'Channel 1:','Channel 2:','Channel 3:','Channel 4:'...
-            'Channel 5:','Channel 6:','Channel 7:','Channel 8:'};
-        definput = {'Ch1','Ch2','Ch3','Ch4','Ch5','Ch6','Ch7','Ch8'};
+    prompt = cell(1, EEG.nbchan);
+    definput = cell(1, EEG.nbchan);
+    for i = 1:EEG.nbchan
+        prompt(i) = {['Channel ' num2str(i) ':']};
+        definput(i) = {EEG.chanlocs(1,i).labels};
     end
 
     dlgtitle = 'Channel Labels';

@@ -56,7 +56,6 @@ switch pid
         output.type = 'orn';
         output.orn = fread(fid,(payload-8)/2,'int16');
         output.orn = output.orn .* [0.061, 0.061, 0.061, 8.750, 8.750, 8.750, 1.52, 1.52, 1.52]';
-    
     case {144, 146, 30, 62, 208, 210}                          % EEG package
         [temp, n] = fread(fid,(payload-8),'uint8');
         if n < (payload-8) % check if the package terminates in between
@@ -98,13 +97,16 @@ switch pid
             output.data = double(temp) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         end
         output.data = round(output.data/EXG_UNIT, 2);
-    case {27, 19, 111, 99}
-        fread(fid, payload-8, 'uint8'); % do nothing
-        output.type = 'unimplemented';
     case 194
         output.type = 'marker_event';
         output.code = fread(fid,1,'uint16');
-    case {192, 193, 195} % Not implemented
+    case 99
+        output.type = 'dev_info';
+        fw_str = num2str(fread(fid, 1, 'uint16'));
+        output.fw_version = [fw_str(1) '.' fw_str(2) '.' fw_str(3)];
+        output.data_rate = 16000 / (2 ^ fread(fid, 1, 'uint8'));
+        output.adc_mask = dec2bin(fread(fid, 1, 'uint8'), 8);
+    case {27, 19, 111, 192, 193, 195} % Not implemented / do nothing
         fread(fid, payload-8, 'uint8');
         output.type = 'unimplemented';
     otherwise

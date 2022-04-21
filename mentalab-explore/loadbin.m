@@ -8,6 +8,7 @@ function [EEG, com] = loadbin(filepath, varargin)
     exg_data = [];
     exg_timestamp = [];
     marker = [];
+    sr = 0;
 
     orn_srate = 20; % Sampling rate of ORN data
 
@@ -26,7 +27,10 @@ function [EEG, com] = loadbin(filepath, varargin)
                     repmat(packet.timestamp, 1, size(packet.data, 2)));
             case 'marker_event'
                 marker = cat(1, marker, [packet.timestamp, floor(packet.code)]);
-            case { 'env', 'ts', 'fw', 'dev_info', 'unimplemented' }
+            case 'dev_info'
+                adc_mask = reverse(packet.adc_mask);
+                sr = packet.data_rate;
+            case { 'unimplemented' }
                 continue; % do nothing
             otherwise
                 read = 0; % end of stream
@@ -38,12 +42,25 @@ function [EEG, com] = loadbin(filepath, varargin)
         marker(i, 1) = find(exg_timestamp > marker(i, 1), 1);
     end
 
-    sample_rate = getSamplingRate(exg_timestamp);
+    if sr == 0
+        sr = getSamplingRate(exg_timestamp);
+    end
+
+    no_chan = size(exg_data, 1);
+    eeg_ch_names = cell(1, no_chan);
+    for i = 1:size(adc_mask, 2)
+        if (str2num(adc_mask(i)) == 1) % If channel is on, add it
+            eeg_ch_names(i) = {['Ch' num2str(i)]};
+        end
+    end
+
+    eeg_chanlocs = struct('labels', eeg_ch_names);
 
     % Convert to EEGLAB structure
     EEG = pop_importdata('dataformat', 'array', ...
-        'nbchan', size(exg_data, 1), 'data', ...
-        exg_data, 'setname', 'raw_eeg', 'srate', sample_rate, 'xmin', 0);
+        'nbchan', no_chan, 'data', ...
+        exg_data, 'setname', 'raw_eeg', 'srate', ...
+        sr, 'xmin', 0, 'chanlocs', eeg_chanlocs);
     EEG = eeg_checkset(EEG);
     EEG = pop_importevent( EEG, 'event', marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
