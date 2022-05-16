@@ -6,9 +6,9 @@ function [EEG, com] = loadcsv(filepath)
     orn_srate = 20; % Sampling rate of ORN data
 
     [directory, filename, ~] = fileparts(filepath);
-    filename_split = split(filename, "_");
-    name = char(filename_split(1));
-
+    idx_final_underscore = find(filename == '_', 1, 'last');
+    name = extractBefore(filename, idx_final_underscore);
+    
     fullfile_EXG = fullfile(directory, append(name, '_ExG.csv'));
     EXG = importdata(fullfile_EXG, ',', 1);
     eeg_data = sortrows(EXG.data, 1);

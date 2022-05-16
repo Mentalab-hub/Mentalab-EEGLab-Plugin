@@ -54,8 +54,8 @@ end
 
 
 function checkFolderContents(filename, directory) % Will be CSV file
-    filename_split = split(filename, "_");
-    name = char(filename_split(1));
+    idx_final_underscore = find(filename == '_', 1, 'last');
+    name = extractBefore(filename, idx_final_underscore);
 
     exg_orn_marker = false(1, 3);
     files = dir(directory);
