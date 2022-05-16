@@ -6,9 +6,9 @@ function [EEG, com] = loadcsv(filepath)
     orn_srate = 20; % Sampling rate of ORN data
 
     [directory, filename, ~] = fileparts(filepath);
-    filename_split = split(filename, "_");
-    name = char(filename_split(1));
-
+    idx_final_underscore = find(filename == '_', 1, 'last');
+    name = extractBefore(filename, idx_final_underscore);
+    
     fullfile_EXG = fullfile(directory, append(name, '_ExG.csv'));
     EXG = importdata(fullfile_EXG, ',', 1);
     eeg_data = sortrows(EXG.data, 1);
@@ -47,18 +47,19 @@ function [EEG, com] = loadcsv(filepath)
     
     % Convert to EEGLAB structure
     eeg_chanlocs = struct('labels', eeg_ch_names);
-    EEG = pop_importdata('dataformat', 'array', 'nbchan', 0, 'data', ...
-        eeg_data, 'setname', 'raw_eeg', 'srate', sample_rate, 'chanlocs', ...
-        eeg_chanlocs, 'pnts', 0, 'xmin', 0);
+    EEG = pop_importdata('dataformat', 'array', ...
+        'nbchan', size(eeg_data, 1), 'data', ...
+        eeg_data, 'setname', 'raw_eeg', 'srate', ...
+        sample_rate, 'xmin', 0, 'chanlocs', eeg_chanlocs);
     EEG = eeg_checkset(EEG);
     EEG = pop_importevent( EEG, 'event', eeg_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     EEG = eeg_checkset(EEG);
-    
+
     orn_chanlocs = struct('labels', orn_ch_names);
-    ORN = pop_importdata('dataformat', 'array', 'nbchan', 0, 'data', ...
-        orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'chanlocs', ...
-        orn_chanlocs, 'pnts', 0, 'xmin', 0);
+    ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
+        orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0, ...
+        'chanlocs', orn_chanlocs);
     ORN = eeg_checkset(ORN);
     ORN = pop_importevent(ORN, 'event', orn_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);

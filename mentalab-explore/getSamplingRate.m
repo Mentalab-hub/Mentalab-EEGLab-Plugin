@@ -1,6 +1,6 @@
 function sample_rate = getSamplingRate(exg_timestamp)
 
-i = 0;
+    i = 0;
     current_sec = 0;
     for ts = exg_timestamp
         if floor(ts) ~= current_sec
