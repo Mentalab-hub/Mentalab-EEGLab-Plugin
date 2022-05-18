@@ -1,7 +1,10 @@
-function [EEG, com] = loadcsv(filepath)
+function [EEG, ORN, com] = loadcsv(filepath)
     com = '';
     EEG = [];
     EEG = eeg_emptyset;
+
+    ORN = [];
+    ORN = eeg_emptyset;
 
     orn_srate = 20; % Sampling rate of ORN data
 

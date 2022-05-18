@@ -2,7 +2,8 @@ function sample_rate = getSamplingRate(exg_timestamp)
 
     i = 0;
     current_sec = 0;
-    for ts = exg_timestamp
+    for n = 1:length(exg_timestamp)
+        ts = exg_timestamp(n);
         if floor(ts) ~= current_sec
             if i > 249
                 break;

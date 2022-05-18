@@ -54,10 +54,10 @@ output.timestamp = fread(fid, 1, 'uint32') / TIMESTAMP_SCALE;  % Timestamp of th
 switch pid
     case 13                                                    % Orientation package
         output.type = 'orn';
-        output.orn = fread(fid,(payload-8)/2,'int16');
+        output.orn = fread(fid, (payload-8)/2, 'int16');
         output.orn = output.orn .* [0.061, 0.061, 0.061, 8.750, 8.750, 8.750, 1.52, 1.52, 1.52]';
     case {144, 146, 30, 62, 208, 210}                          % EEG package
-        [temp, n] = fread(fid,(payload-8),'uint8');
+        [temp, n] = fread(fid, (payload-8), 'uint8');
         if n < (payload-8) % check if the package terminates in between
             warning(interruptWarning);
             output.type = 'end';
@@ -69,37 +69,41 @@ switch pid
             vref = 2.4;
             nPacket = 33;
             temp = byte2int24(temp);
-            temp = reshape(temp,[nChan,nPacket]);
-            output.data = double(temp(2:end,:)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
+            temp = reshape(temp, [nChan,nPacket]);
+            output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         elseif (pid == 146) || (pid == 210)
             output.type = 'eeg8';
             nChan = 9; % 8 channels + 1 status
             vref = 2.4;
             nPacket = 16;
             temp = byte2int24(temp);
-            temp = reshape(temp,[nChan,nPacket]);
-            output.data = double(temp(2:end,:)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
+            disp("===----- size")
+            disp(size(temp))
+            disp(nChan)
+            disp(nPacket)
+            temp = reshape(temp, [nChan, nPacket]);
+            output.data = double(temp(2:end, :)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         elseif pid == 30
             output.type = 'eeg8';
             nChan = 9; % 8 channels + 1 status
             vref = 4.5;
             nPacket = 16;
             temp = byte2int24(temp);
-            temp = reshape(temp,[nChan,nPacket]);
-            output.data = double(temp(2:end, :)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
+            temp = reshape(temp, [nChan, nPacket]);
+            output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         elseif pid == 62
             output.type = 'eeg8';
             nChan = 8;
             vref = 4.5;
             nPacket = 18;
             temp = byte2int24(temp);
-            temp = reshape(temp,[nChan,nPacket]);
-            output.data = double(temp) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
+            temp = reshape(temp, [nChan, nPacket]);
+            output.data = double(temp) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         end
-        output.data = round(output.data/EXG_UNIT, 2);
+        output.data = round(output.data / EXG_UNIT, 2);
     case 194
         output.type = 'marker_event';
-        output.code = fread(fid,1,'uint16');
+        output.code = fread(fid, 1, 'uint16');
     case 99
         output.type = 'dev_info';
         fw_str = num2str(fread(fid, 1, 'uint16'));
@@ -111,7 +115,7 @@ switch pid
         output.type = 'unimplemented';
     otherwise
         warning([pidUnexpectedWarning pid])
-        temp = fread(fid,payload-8,'uint8'); % Read the payload
+        temp = fread(fid, payload-8, 'uint8'); % Read the payload
         output.type = 'end';
 end
 

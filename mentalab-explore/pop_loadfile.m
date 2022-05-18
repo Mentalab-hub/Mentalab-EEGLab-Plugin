@@ -1,4 +1,4 @@
-function [EEG, com] = pop_loadfile(filepath, varargin)  
+function [EEG, ORN, com] = pop_loadfile(filepath, varargin)  
     com = '';
 
     if nargin > 0  % File provided in call
@@ -7,16 +7,16 @@ function [EEG, com] = pop_loadfile(filepath, varargin)
     end
 
     [filename, path] = getFileFromUser();
-    [EEG, com] = runMain([path, filename]);
+    [EEG, ORN, com] = runMain([path, filename]);
 end
 
 
-function [EEG, com] = runMain(filepath)
+function [EEG, ORN, com] = runMain(filepath)
     [directory, filename, ext] = fileparts(filepath);
     if (contains(ext, 'csv'))
         checkFolderContents(filename, directory);
     end
-    [EEG, com] = loadBINCSV(filepath, ext);
+    [EEG, ORN, com] = loadBINCSV(filepath, ext);
 
     channelNameList = requestChannelLabels(EEG);
     if length(channelNameList) > 3
@@ -24,6 +24,9 @@ function [EEG, com] = runMain(filepath)
             EEG.chanlocs(n).labels = channelNameList{n};
         end
     end
+
+    EEG.filename = filename;
+    ORN.filename = filename;
 end
 
 
@@ -44,11 +47,11 @@ function [filename, path] = getFileFromUser()
 end
 
 
-function [EEG, com] = loadBINCSV(filepath, ext)
+function [EEG, ORN, com] = loadBINCSV(filepath, ext)
     if (contains(ext, "bin", 'IgnoreCase', true))
-        [EEG, com] = loadbin(filepath);
+        [EEG, ORN, com] = loadbin(filepath);
     else
-        [EEG, com] = loadcsv(filepath);
+        [EEG, ORN, com] = loadcsv(filepath);
     end
 end
 
