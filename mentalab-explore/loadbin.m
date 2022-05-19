@@ -39,7 +39,29 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
 
     % Event syncing - find the first timestamp that is close to the marker
     for i = 1:size(marker, 1)
-        marker(i, 1) = find(exg_timestamp > marker(i, 1), 1);
+        idx_eeg_above_marker = find(exg_timestamp > marker(i, 1), 1);
+        idx_eeg_below_marker = idx_eeg_above_marker - 1;
+        
+        diff_eeg_above = abs(exg_timestamp(idx_eeg_above_marker) - marker(i, 1));
+        diff_eeg_below = abs(exg_timestamp(idx_eeg_below_marker) - marker(i, 1));
+
+        if (diff_eeg_above > diff_eeg_below)
+            eeg_marker(i, 1) = idx_eeg_below_marker;
+        else
+            eeg_marker(i, 1) = idx_eeg_above_marker;
+        end
+
+        idx_orn_above_marker = find(orn_timestamp > marker(i, 1), 1);
+        idx_orn_below_marker = idx_orn_above_marker - 1;
+
+        diff_orn_above = abs(orn_timestamp(idx_orn_above_marker) - marker(i, 1));
+        diff_orn_below = abs(orn_timestamp(idx_orn_below_marker) - marker(i, 1));
+
+        if (diff_orn_above > diff_orn_below)
+            orn_marker(i, 1) = idx_orn_below_marker;
+        else
+            orn_marker(i, 1) = idx_orn_above_marker;
+        end
     end
 
     if sr == 0
@@ -61,14 +83,14 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
         exg_data, 'setname', 'raw_eeg', 'srate', sr, 'xmin', 0, ...
         'chanlocs', eeg_chanlocs);
     EEG = eeg_checkset(EEG);
-    EEG = pop_importevent(EEG, 'event', marker, 'fields', ...
+    EEG = pop_importevent(EEG, 'event', eeg_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     EEG = eeg_checkset(EEG);
     
     ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
         orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0);
     ORN = eeg_checkset(ORN);
-    ORN = pop_importevent(ORN, 'event', marker, 'fields', ...
+    ORN = pop_importevent(ORN, 'event', orn_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     ORN = eeg_checkset(ORN);
 end
