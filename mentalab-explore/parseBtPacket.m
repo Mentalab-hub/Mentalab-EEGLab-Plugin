@@ -1,4 +1,4 @@
-function [output] = parseBtPacket(fid)
+function [output, shownErr] = parseBtPacket(fid, shownErr)
 % Parse the incoming data package
 %   This function reads and parses one data package from the input stream.
 %   
@@ -36,13 +36,14 @@ output = [];
 
 EXG_UNIT = 1e-6;
 TIMESTAMP_SCALE = 10000;
-interruptWarning = 'Stream interrupted unexpectedly! End of file/stream!';
+interruptWarning = 'Unexpected end of stream.';
+endOfFileWarning = 'End of file.';
 fletcherMismatchWarning = 'Fletcher mismatch!';
 pidUnexpectedWarning = 'Unexpected package ID: ';
 
 [pid, n] = fread(fid, 1, 'uint8');    % Read the package ID
 if n == 0
-    warning(interruptWarning);
+    warning(endOfFileWarning);
     output.type = 'end';
     return; % No data in the stream/file
 end
@@ -55,6 +56,14 @@ switch pid
     case 13                                                    % Orientation package
         output.type = 'orn';
         output.orn = fread(fid, (payload-8)/2, 'int16');
+        if (numel(output.orn) < 9)
+            uiwait(msgbox("The file you have requested is incomplete. I will attempt to fix missing data.","Error","error"));
+            output.orn = [output.orn; zeros(9 - numel(output.orn), 1)];
+            % I don't know if this is the right thing to do.
+            % Essentially this seems to occur in the final item of a binary
+            % file; it has been incompletely written. So I put
+            % zeroes at the end to fill in the missing values...
+        end
         output.orn = output.orn .* [0.061, 0.061, 0.061, 8.750, 8.750, 8.750, 1.52, 1.52, 1.52]';
     case {144, 146, 30, 62, 208, 210}                          % EEG package
         [temp, n] = fread(fid, (payload-8), 'uint8');
@@ -69,7 +78,7 @@ switch pid
             vref = 2.4;
             nPacket = 33;
             temp = byte2int24(temp);
-            temp = reshape(temp, [nChan,nPacket]);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         elseif (pid == 146) || (pid == 210)
             output.type = 'eeg8';
@@ -77,11 +86,7 @@ switch pid
             vref = 2.4;
             nPacket = 16;
             temp = byte2int24(temp);
-            disp("===----- size")
-            disp(size(temp))
-            disp(nChan)
-            disp(nPacket)
-            temp = reshape(temp, [nChan, nPacket]);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / ( 2^23 - 1 ) / 6; % Calculate the real voltage value
         elseif pid == 30
             output.type = 'eeg8';
@@ -89,7 +94,7 @@ switch pid
             vref = 4.5;
             nPacket = 16;
             temp = byte2int24(temp);
-            temp = reshape(temp, [nChan, nPacket]);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         elseif pid == 62
             output.type = 'eeg8';
@@ -97,7 +102,7 @@ switch pid
             vref = 4.5;
             nPacket = 18;
             temp = byte2int24(temp);
-            temp = reshape(temp, [nChan, nPacket]);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         end
         output.data = round(output.data / EXG_UNIT, 2);
@@ -123,7 +128,7 @@ end
 % Check the consistency of the Fletcher
 [fletcher, n] = fread(fid, 4, 'uint8');
 if n < 4
-    warning(interruptWarning);
+    warning(endOfFileWarning);
 elseif ((pid ~= 27) && (fletcher(4) ~= 222))...
        || ((pid == 27) && (fletcher(4) ~= 255))
     disp(fletcher);
@@ -133,3 +138,14 @@ end
 
 end
 
+function [temp, shownError] = reshapeWithWarning(temp, nChan, nPacket, shownError)
+    if (abs(numel(temp) - nChan * nPacket) > 1) % #channels is wrong
+        if (~shownError)
+            uiwait(msgbox("The file you have requested is corrupt. I will attempt to fix it, however this may cause noticeable problems downstream.","Error","error"));
+            shownError = true;
+        end
+        % channels are missing filled with zero
+        temp = [temp; zeros(abs(nChan * nPacket - numel(temp)), 1)];
+    end
+    temp = reshape(temp, [nChan, nPacket]);
+end

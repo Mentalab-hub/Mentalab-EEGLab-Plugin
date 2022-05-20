@@ -11,9 +11,10 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     sr = 0;
 
     orn_srate = 20; % Sampling rate of ORN data
+    shownErr = false;
 
     while read
-        packet = parseBtPacket(fid);
+        [packet, shownErr] = parseBtPacket(fid, shownErr);
         if ~isfield(packet, 'type')
             continue;
         end
@@ -38,31 +39,7 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     end
 
     % Event syncing - find the first timestamp that is close to the marker
-    for i = 1:size(marker, 1)
-        idx_eeg_above_marker = find(exg_timestamp > marker(i, 1), 1);
-        idx_eeg_below_marker = idx_eeg_above_marker - 1;
-        
-        diff_eeg_above = abs(exg_timestamp(idx_eeg_above_marker) - marker(i, 1));
-        diff_eeg_below = abs(exg_timestamp(idx_eeg_below_marker) - marker(i, 1));
-
-        if (diff_eeg_above > diff_eeg_below)
-            eeg_marker(i, 1) = idx_eeg_below_marker;
-        else
-            eeg_marker(i, 1) = idx_eeg_above_marker;
-        end
-
-        idx_orn_above_marker = find(orn_timestamp > marker(i, 1), 1);
-        idx_orn_below_marker = idx_orn_above_marker - 1;
-
-        diff_orn_above = abs(orn_timestamp(idx_orn_above_marker) - marker(i, 1));
-        diff_orn_below = abs(orn_timestamp(idx_orn_below_marker) - marker(i, 1));
-
-        if (diff_orn_above > diff_orn_below)
-            orn_marker(i, 1) = idx_orn_below_marker;
-        else
-            orn_marker(i, 1) = idx_orn_above_marker;
-        end
-    end
+    [eeg_marker, orn_marker] = getMarkerIdxs(exg_timestamp, orn_timestamp, marker);
 
     if sr == 0
         sr = getSamplingRate(exg_timestamp);

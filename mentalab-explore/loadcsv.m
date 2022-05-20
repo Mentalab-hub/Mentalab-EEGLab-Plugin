@@ -40,32 +40,7 @@ function [EEG, ORN, com] = loadcsv(filepath)
     
     % Event syncing
     if isfield(marker, 'data')
-        % Event syncing - find the first timestamp that is close to the marker
-        for i = 1:size(marker, 1)
-            idx_eeg_above_marker = find(eeg_timestamps > marker.data(i, 1), 1);
-            idx_eeg_below_marker = idx_eeg_above_marker - 1;
-        
-            diff_eeg_above = abs(eeg_timestamps(idx_eeg_above_marker) - marker.data(i, 1));
-            diff_eeg_below = abs(eeg_timestamps(idx_eeg_below_marker) - marker.data(i, 1));
-
-            if (diff_eeg_above > diff_eeg_below)
-                eeg_marker(i, 1) = idx_eeg_below_marker;
-            else
-                eeg_marker(i, 1) = idx_eeg_above_marker;
-            end
-
-            idx_orn_above_marker = find(orn_timestamps > marker.data(i, 1), 1);
-            idx_orn_below_marker = idx_orn_above_marker - 1;
-
-            diff_orn_above = abs(orn_timestamps(idx_orn_above_marker) - marker.data(i, 1));
-            diff_orn_below = abs(orn_timestamps(idx_orn_below_marker) - marker.data(i, 1));
-
-            if (diff_orn_above > diff_orn_below)
-                orn_marker(i, 1) = idx_orn_below_marker;
-            else
-                orn_marker(i, 1) = idx_orn_above_marker;
-            end
-        end
+        [eeg_marker, orn_marker] = getMarkerIdxs(eeg_timestamps, orn_timestamps, marker.data);
     end
 
     sample_rate = getSamplingRate(eeg_timestamps);
