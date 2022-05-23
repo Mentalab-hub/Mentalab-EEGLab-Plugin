@@ -27,20 +27,11 @@ function [EEG, ORN, com] = loadcsv(filepath)
     orn_timestamps = ORN.data(:, 1);
     
     fullfile_marker = fullfile(directory, append(name, '_Marker.csv'));
-    marker = importdata(fullfile_marker, ',',1);
+    marker = readtable(fullfile_marker); % works better when file contains strings and numerics than importdata
     eeg_marker = [];
     orn_marker = [];
-    if isfield(marker,'data')
-        eeg_marker = zeros(size(marker.data,1), 2);
-        eeg_marker(:, 2) = marker.data(:, 2);
-    
-        orn_marker = zeros(size(marker.data,1), 2);
-        orn_marker(:, 2) = marker.data(:, 2);
-    end
-    
-    % Event syncing
-    if isfield(marker, 'data')
-        [eeg_marker, orn_marker] = getMarkerIdxs(eeg_timestamps, orn_timestamps, marker.data);
+    if numel(marker) > 0
+        [eeg_marker, orn_marker] = getMarkerIdxs(eeg_timestamps, orn_timestamps, marker);
     end
 
     sample_rate = getSamplingRate(eeg_timestamps);

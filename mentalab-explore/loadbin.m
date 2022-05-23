@@ -39,7 +39,7 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     end
 
     % Event syncing - find the first timestamp that is close to the marker
-    [eeg_marker, orn_marker] = getMarkerIdxs(exg_timestamp, orn_timestamp, marker);
+    [eeg_marker, orn_marker] = getMarkerIdxs(exg_timestamp, orn_timestamp, array2table(marker));
 
     if sr == 0
         sr = getSamplingRate(exg_timestamp);
