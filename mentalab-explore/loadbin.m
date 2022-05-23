@@ -60,13 +60,19 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
         exg_data, 'setname', 'raw_eeg', 'srate', sr, 'xmin', 0, ...
         'chanlocs', eeg_chanlocs);
     EEG = eeg_checkset(EEG);
+
+    ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
+        orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0);
+    ORN = eeg_checkset(ORN);
+    
+    if (isempty(eeg_marker))
+        return;
+    end
+    
     EEG = pop_importevent(EEG, 'event', eeg_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     EEG = eeg_checkset(EEG);
     
-    ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
-        orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0);
-    ORN = eeg_checkset(ORN);
     ORN = pop_importevent(ORN, 'event', orn_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     ORN = eeg_checkset(ORN);
