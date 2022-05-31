@@ -1,4 +1,4 @@
-function [EEG, com] = pop_loadfile(filepath, varargin)  
+function [EEG, ORN, com] = pop_loadfile(filepath, varargin)  
     com = '';
 
     if nargin > 0  % File provided in call
@@ -7,17 +7,26 @@ function [EEG, com] = pop_loadfile(filepath, varargin)
     end
 
     [filename, path] = getFileFromUser();
-    [EEG, com] = runMain([path, filename]);
+    [EEG, ORN, com] = runMain([path, filename]);
 end
 
 
-function [EEG, com] = runMain(filepath)
+function [EEG, ORN, com] = runMain(filepath)
     [directory, filename, ext] = fileparts(filepath);
     if (contains(ext, 'csv'))
         checkFolderContents(filename, directory);
     end
-    sampling_rate = getSamplingRate();
-    [EEG, com] = loadBINCSV(filepath, sampling_rate, ext);
+    [EEG, ORN, com] = loadBINCSV(filepath, ext);
+
+    channelNameList = requestChannelLabels(EEG);
+    if length(channelNameList) > 3
+        for n = 1:length(channelNameList)
+            EEG.chanlocs(n).labels = channelNameList{n};
+        end
+    end
+
+    EEG.filename = filename;
+    ORN.filename = filename;
 end
 
 
@@ -38,29 +47,31 @@ function [filename, path] = getFileFromUser()
 end
 
 
-function [EEG, com] = loadBINCSV(filepath, sampling_rate, ext)
+function [EEG, ORN, com] = loadBINCSV(filepath, ext)
     if (contains(ext, "bin", 'IgnoreCase', true))
-        error(['---> Binary data not currently supported - we' char(39) 're working on it!'])
-        %loadbin(filepath);
+        [EEG, ORN, com] = loadbin(filepath);
+    else
+        [EEG, ORN, com] = loadcsv(filepath);
     end
-
-    [EEG, com] = loadcsv(filepath, sampling_rate);
 end
 
 
 function checkFolderContents(filename, directory) % Will be CSV file
-    filename_split = split(filename, "_");
-    name = char(filename_split(1));
+    idx_final_underscore = find(filename == '_', 1, 'last');
+    name = extractBefore(filename, idx_final_underscore);
 
     exg_orn_marker = false(1, 3);
     files = dir(directory);
     for i = 1:length(files)
         file_i = files(i).name;
-        if (contains(file_i, [name '_ExG.csv']))
+        if (contains(file_i, [name '_ExG.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_ExG'], 'IgnoreCase', true))
             exg_orn_marker(1) = true;
-        elseif (contains(file_i, [name '_ORN.csv']))
+        elseif (contains(file_i, [name '_ORN.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_ORN'], 'IgnoreCase', true))
             exg_orn_marker(2) = true;
-        elseif (contains(file_i, [name '_Marker.csv']))
+        elseif (contains(file_i, [name '_Marker.csv'], 'IgnoreCase', true)...
+                || contains(file_i, [name '_Marker'], 'IgnoreCase', true))
             exg_orn_marker(3) = true;
         end
     end
@@ -77,19 +88,15 @@ function checkFolderContents(filename, directory) % Will be CSV file
 end
 
 
-function sampling_rate = getSamplingRate()
-    sampling_rate = inputgui( 'geometry', { [1 1] }, ... % Get the sampling rate from the user
-        'geomvert', [3], 'uilist', { ...
-        { 'style', 'text', 'string', [ 'Sampling rate:' 10 10 10 ] }, ...
-        { 'style', 'popupmenu', 'string', '250 Hz|500 Hz|1k Hz' } } );
-
-   if (isequal(sampling_rate, {[1]})) % First option... etc.
-       sampling_rate = 250;
-   elseif (isequal(sampling_rate, {[2]})) 
-       sampling_rate = 500;
-   elseif (isequal(sampling_rate, {[3]})) 
-       sampling_rate = 1000;
-   elseif (isempty(sampling_rate))
-        error('---> Please select a sampling rate to proceed.')
+function channelNameList = requestChannelLabels(EEG)
+    prompt = cell(1, EEG.nbchan);
+    definput = cell(1, EEG.nbchan);
+    for i = 1:EEG.nbchan
+        prompt(i) = {['Channel ' num2str(i) ':']};
+        definput(i) = {EEG.chanlocs(1,i).labels};
     end
+
+    dlgtitle = 'Channel Labels';
+    dims = [1 12];
+    channelNameList = inputdlg(prompt, dlgtitle, dims, definput, 'on');
 end
