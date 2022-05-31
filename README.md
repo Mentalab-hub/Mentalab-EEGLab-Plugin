@@ -23,7 +23,7 @@ Your file manager will display only CSV and BIN files. Navigate to the file you 
 If you are importing a CSV file, ensure that the current directory contains three files called:
 * \<FILENAME\>_\_**ExG.csv**_
 * \<FILENAME\>_\_**ORN.csv**_
-* \<FILENAME\>_\_**Marker.csv**_. 
+* \<FILENAME\>_\_**Marker.csv**_ 
 
 That is, each file should have the same name, but one should have suffix _\_ExG_, one should have suffix _\_ORN_, and the other _\_Marker_. These files should hold ExG, motion, and marker data respectively. 
 
