@@ -31,8 +31,8 @@ end
 
 
 function [filename, path] = getFileFromUser() 
-    [filename, path] = uigetfile({'*.BIN;*.CSV;' 'All BIN and CSV files';}, ...
-        'Select a BIN or CSV file'); 
+    [filename, path] = uigetfile({'*.BIN;*.CSV;*.BDF;*.EDF' 'All BIN, EDF/BDF and CSV files';}, ...
+        'Select a BIN, EDF/BDF or CSV file'); 
     if filename == 0
         error('---> File selection cancelled.')
     end
@@ -40,9 +40,11 @@ function [filename, path] = getFileFromUser()
     if (~contains(filename, '_ExG.csv', 'IgnoreCase', true) ...
             && ~contains(filename, '_ORN.csv', 'IgnoreCase', true) ...
             && ~contains(filename, '_Marker.csv', 'IgnoreCase', true) ...
-            && ~contains(filename, '.bin', 'IgnoreCase', true)) 
+            && ~contains(filename, '.bin', 'IgnoreCase', true) ...
+            && ~contains(filename, '.bdf', 'IgnoreCase', true) ...
+            && ~contains(filename, '.edf', 'IgnoreCase', true)) 
         error(['---> Error on: "' filename '". Unsuitable file type.' ...
-            ' Please select a BIN file or CSV file with suffix "_ExG", "_ORN" or "_Marker".'])
+            ' Please select a BIN file, BDF or CSV file with suffix "_ExG", "_ORN" or "_Marker".'])
     end
 end
 
@@ -50,6 +52,8 @@ end
 function [EEG, ORN, com] = loadBINCSV(filepath, ext)
     if (contains(ext, "bin", 'IgnoreCase', true))
         [EEG, ORN, com] = loadbin(filepath);
+    elseif (contains(ext, "bdf", 'IgnoreCase', true) || contains(ext, "edf", 'IgnoreCase', true))
+        [EEG, ORN, com] = loadedf(filepath);
     else
         [EEG, ORN, com] = loadcsv(filepath);
     end
