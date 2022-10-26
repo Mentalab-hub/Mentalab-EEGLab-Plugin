@@ -96,6 +96,14 @@ switch pid
             temp = byte2int24(temp);
             [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
+        elseif pid == 148
+            output.type = 'eeg32';
+            nChan = 33; % 32 channels + 1 status
+            vref = 4.0;
+            nPacket = 4;
+            temp = byte2int24bigendinen(temp);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
+            output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
         elseif pid == 62
             output.type = 'eeg8';
             nChan = 8;

@@ -22,7 +22,7 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
             case 'orn'
                 orn_data = cat(2, orn_data, packet.orn);
                 orn_timestamp = cat(2, orn_timestamp, packet.timestamp);
-            case { 'eeg4', 'eeg8' }
+            case { 'eeg4', 'eeg8', 'eeg32' }
                 exg_data = cat(2, exg_data, packet.data);
                 exg_timestamp = cat(2, exg_timestamp, ...
                     repmat(packet.timestamp, 1, size(packet.data, 2)));
