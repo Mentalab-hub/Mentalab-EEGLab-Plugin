@@ -22,7 +22,7 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
             case 'orn'
                 orn_data = cat(2, orn_data, packet.orn);
                 orn_timestamp = cat(2, orn_timestamp, packet.timestamp);
-            case { 'eeg4', 'eeg8' }
+            case { 'eeg4', 'eeg8', 'eeg32' }
                 exg_data = cat(2, exg_data, packet.data);
                 exg_timestamp = cat(2, exg_timestamp, ...
                     repmat(packet.timestamp, 1, size(packet.data, 2)));
@@ -46,6 +46,11 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     end
 
     no_chan = size(exg_data, 1);
+    if no_chan == 8
+        adc_mask = adc_mask(end-flip(1:8) + 1);
+    end
+
+    disp(['binary is ', num2str(adc_mask)])
     eeg_ch_names = cell(1, no_chan);
     for i = 1:size(adc_mask, 2)
         if (str2num(adc_mask(i)) == 1) % If channel is on, add it
@@ -54,13 +59,13 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     end
 
     eeg_chanlocs = struct('labels', eeg_ch_names);
+    assignin('base', 'eeg_chanlocs', eeg_chanlocs)
 
     % Convert to EEGLAB structure
     EEG = pop_importdata('dataformat', 'array', 'nbchan', no_chan, 'data', ...
         exg_data, 'setname', 'raw_eeg', 'srate', sr, 'xmin', 0, ...
         'chanlocs', eeg_chanlocs);
     EEG = eeg_checkset(EEG);
-
     ORN = pop_importdata('dataformat', 'array', 'nbchan', 9, 'data', ...
         orn_data, 'setname', 'raw_orn', 'srate', orn_srate, 'xmin', 0);
     ORN = eeg_checkset(ORN);
@@ -68,7 +73,7 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     if (isempty(eeg_marker))
         return;
     end
-    
+   
     EEG = pop_importevent(EEG, 'event', eeg_marker, 'fields', ...
         {'latency', 'type'}, 'timeunit', NaN);
     EEG = eeg_checkset(EEG);
