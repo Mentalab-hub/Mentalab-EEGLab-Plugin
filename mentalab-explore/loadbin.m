@@ -50,7 +50,6 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
         adc_mask = adc_mask(end-flip(1:8) + 1);
     end
 
-    disp(['binary is ', num2str(adc_mask)])
     eeg_ch_names = cell(1, no_chan);
     for i = 1:size(adc_mask, 2)
         if (str2num(adc_mask(i)) == 1) % If channel is on, add it
@@ -59,7 +58,6 @@ function [EEG, ORN, com] = loadbin(filepath, varargin)
     end
 
     eeg_chanlocs = struct('labels', eeg_ch_names);
-    assignin('base', 'eeg_chanlocs', eeg_chanlocs)
 
     % Convert to EEGLAB structure
     EEG = pop_importdata('dataformat', 'array', 'nbchan', no_chan, 'data', ...

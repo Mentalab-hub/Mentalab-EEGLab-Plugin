@@ -132,8 +132,10 @@ switch pid
         output.adc_mask = dec2bin(4294967295, 32);
         fread(fid, 1, 'uint8');
         fread(fid, 1, 'uint8');
-    case {27, 19, 111, 192, 193, 195, 177} % Not implemented / do nothing: 177 is trigger out packet
-        fread(fid, payload-8, 'uint8');
+    case 111
+        output.type = 'unimplemented';
+    case {27, 19, 192, 193, 195, 177, 197, 178} % Not implemented / do nothing: 177 is trigger out packet
+        fread(fid, payload-8, 'uint8'); 
         output.type = 'unimplemented';
     otherwise
         disp(['packet id is ', num2str(pid)])

@@ -98,5 +98,9 @@ function channelNameList = requestChannelLabels(EEG)
         prompt(i) = {['Channel ' num2str(i) ':']};
         definput(i) = {EEG.chanlocs(1,i).labels};
     end
+    
+    %channelNameList = inputdlg(prompt, dlgtitle, dims, definput, 'on', 'List');
     channelNameList = drawUiPanel(EEG.nbchan, prompt, definput);
+    disp(channelNameList)
+    
 end
