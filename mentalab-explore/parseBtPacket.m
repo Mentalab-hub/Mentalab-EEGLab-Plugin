@@ -65,7 +65,7 @@ switch pid
             % zeroes at the end to fill in the missing values...
         end
         output.orn = output.orn .* [0.061, 0.061, 0.061, 8.750, 8.750, 8.750, 1.52, 1.52, 1.52]';
-    case {144, 146, 30, 62, 208, 210}                          % EEG package
+    case {144, 146, 30, 62, 208, 210, 148, 150}                          % EEG package
         [temp, n] = fread(fid, (payload-8), 'uint8');
         if n < (payload-8) % check if the package terminates in between
             warning(interruptWarning);
@@ -80,7 +80,7 @@ switch pid
             temp = byte2int24(temp);
             [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
-        elseif (pid == 146) || (pid == 210)
+        elseif (pid == 146) || (pid == 210)|| (pid == 150)
             output.type = 'eeg8';
             nChan = 9; % 8 channels + 1 status
             vref = 2.4;
@@ -93,6 +93,14 @@ switch pid
             nChan = 9; % 8 channels + 1 status
             vref = 4.5;
             nPacket = 16;
+            temp = byte2int24(temp);
+            [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
+            output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
+        elseif pid == 148
+            output.type = 'eeg32';
+            nChan = 33; % 32 channels + 1 status
+            vref = 2.4;
+            nPacket = 4;
             temp = byte2int24(temp);
             [temp, shownErr] = reshapeWithWarning(temp, nChan, nPacket, shownErr);
             output.data = double(temp(2:end, :)) * vref / (2^23 - 1) / 6; % Calculate the real voltage value
@@ -115,10 +123,22 @@ switch pid
         output.fw_version = [fw_str(1) '.' fw_str(2) '.' fw_str(3)];
         output.data_rate = 16000 / (2 ^ fread(fid, 1, 'uint8'));
         output.adc_mask = dec2bin(fread(fid, 1, 'uint8'), 8);
-    case {27, 19, 111, 192, 193, 195} % Not implemented / do nothing
-        fread(fid, payload-8, 'uint8');
+    case 97
+        output.type = 'dev_info';
+        output.board_id = num2str(fread(fid, 16, 'char'));
+        fw_str = num2str(fread(fid, 1, 'uint16'));
+        output.fw_version = [fw_str(1) '.' fw_str(2) '.' fw_str(3)];
+        output.data_rate = 16000 / (2 ^ fread(fid, 1, 'uint8'));
+        output.adc_mask = dec2bin(4294967295, 32);
+        fread(fid, 1, 'uint8');
+        fread(fid, 1, 'uint8');
+    case 111
+        output.type = 'unimplemented';
+    case {27, 19, 192, 193, 195, 177, 197, 178} % Not implemented / do nothing: 177 is trigger out packet
+        fread(fid, payload-8, 'uint8'); 
         output.type = 'unimplemented';
     otherwise
+        disp(['packet id is ', num2str(pid)])
         warning([pidUnexpectedWarning pid])
         temp = fread(fid, payload-8, 'uint8'); % Read the payload
         output.type = 'end';

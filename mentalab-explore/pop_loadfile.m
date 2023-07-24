@@ -18,7 +18,9 @@ function [EEG, ORN, com] = runMain(filepath)
     end
     [EEG, ORN, com] = loadBINCSV(filepath, ext);
 
+
     channelNameList = requestChannelLabels(EEG);
+    %waitfor(channelNameList);
     if length(channelNameList) > 3
         for n = 1:length(channelNameList)
             EEG.chanlocs(n).labels = channelNameList{n};
@@ -50,6 +52,7 @@ end
 function [EEG, ORN, com] = loadBINCSV(filepath, ext)
     if (contains(ext, "bin", 'IgnoreCase', true))
         [EEG, ORN, com] = loadbin(filepath);
+
     else
         [EEG, ORN, com] = loadcsv(filepath);
     end
@@ -95,8 +98,9 @@ function channelNameList = requestChannelLabels(EEG)
         prompt(i) = {['Channel ' num2str(i) ':']};
         definput(i) = {EEG.chanlocs(1,i).labels};
     end
-
-    dlgtitle = 'Channel Labels';
-    dims = [1 12];
-    channelNameList = inputdlg(prompt, dlgtitle, dims, definput, 'on');
+    
+    %channelNameList = inputdlg(prompt, dlgtitle, dims, definput, 'on', 'List');
+    channelNameList = drawUiPanel(EEG.nbchan, prompt, definput);
+    disp(channelNameList)
+    
 end
