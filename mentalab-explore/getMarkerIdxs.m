@@ -9,6 +9,7 @@ function [eeg_marker, orn_marker] = getMarkerIdxs(exg_timestamp, orn_timestamp, 
 
     eeg_marker = cell(height(marker), 2);
     orn_marker = cell(height(marker), 2);
+    
     for i = 1:size(marker, 1)
         idx_eeg_above_marker = find(exg_timestamp > marker{i, 1}, 1);
         idx_eeg_below_marker = idx_eeg_above_marker - 1;
@@ -27,7 +28,14 @@ function [eeg_marker, orn_marker] = getMarkerIdxs(exg_timestamp, orn_timestamp, 
         idx_orn_below_marker = idx_orn_above_marker - 1;
 
         diff_orn_above = abs(orn_timestamp(idx_orn_above_marker) - marker{i, 1});
-        diff_orn_below = abs(orn_timestamp(idx_orn_below_marker) - marker{i, 1});
+        
+        % if the first marker index is one we need to hadle the appropriate
+        % index calculation
+        try
+            diff_orn_below = abs(orn_timestamp(idx_orn_below_marker) - marker{i, 1});
+        catch
+            diff_orn_below = diff_orn_above -1;
+        end
 
         if (diff_orn_above > diff_orn_below)
             orn_marker{i, 1} = idx_orn_below_marker;
