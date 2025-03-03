@@ -2,7 +2,7 @@
 
 > **⚠ Deprecation Notice**  
 > This plugin is deprecated and only works for Explore Legacy Devices.  
-> For Explore Pro devices, please use **Export -> EEGLAB dataset** option to convert BDF/CDV file to EEGLAB.
+> For Explore Pro devices, please use **Export -> EEGLAB dataset** option to convert BDF/CSV file to EEGLAB.
 
 The Mentalab EEGLab Plugin is a MATLAB library that acts as a plugin for [EEGLab](https://sccn.ucsd.edu/eeglab/index.php). Use it to import Mentalab Explore CSV and BIN files into an EEGLab structure. 
 
